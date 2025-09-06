@@ -16,13 +16,16 @@ import {
   AlertTriangle,
   Info,
   Shield,
-  Clock
+  Clock,
+  Search
 } from "lucide-react"
 
 const LoanApplication = () => {
   const [currentStep, setCurrentStep] = useState(1)
   const [loanAmount, setLoanAmount] = useState("")
   const [selectedGuarantors, setSelectedGuarantors] = useState<string[]>([])
+  const [searchQuery, setSearchQuery] = useState("")
+  const [searchResults, setSearchResults] = useState<typeof availableGuarantors>([])
 
   const steps = [
     { id: 1, title: "Loan Details", icon: FileText },
@@ -81,6 +84,26 @@ const LoanApplication = () => {
   }
 
   const requiredGuarantors = loanAmount ? calculateRequiredGuarantors(parseInt(loanAmount)) : 0
+
+  // Simulate guarantor search - in real app this would call backend API
+  const searchGuarantors = (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([])
+      return
+    }
+
+    const filteredGuarantors = availableGuarantors.filter(guarantor => 
+      guarantor.name.toLowerCase().includes(query.toLowerCase()) ||
+      guarantor.code.toLowerCase().includes(query.toLowerCase())
+    )
+    setSearchResults(filteredGuarantors)
+  }
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value
+    setSearchQuery(query)
+    searchGuarantors(query)
+  }
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -271,51 +294,92 @@ const LoanApplication = () => {
                 </p>
               </div>
 
+              {/* Search Input */}
+              <div className="space-y-2 mb-6">
+                <Label htmlFor="guarantorSearch" className="flex items-center">
+                  <Search className="h-4 w-4 mr-2" />
+                  Search Guarantors
+                </Label>
+                <Input
+                  id="guarantorSearch"
+                  type="text"
+                  placeholder="Enter guarantor name or member code (e.g., Mary Wanjiku or SC001234)"
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Search by member name or member code to find potential guarantors
+                </p>
+              </div>
+
+              {/* Search Results or Empty State */}
               <div className="space-y-4">
-                {availableGuarantors.map((guarantor) => (
-                  <Card key={guarantor.id} className="border border-border">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-2">
-                            <div>
-                              <p className="font-medium">{guarantor.name}</p>
-                              <p className="text-sm text-muted-foreground">{guarantor.code}</p>
-                            </div>
-                            <Badge variant={guarantor.reputation === 'Excellent' ? 'default' : 'secondary'}>
-                              {guarantor.reputation}
-                            </Badge>
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                              <span className="text-muted-foreground">Savings:</span>
-                              <span className="ml-2 text-accent">KSh {guarantor.savings.toLocaleString()}</span>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">Can Guarantee:</span>
-                              <span className="ml-2">KSh {guarantor.guaranteeCapacity.toLocaleString()}</span>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <Button
-                          variant={selectedGuarantors.includes(guarantor.id) ? "default" : "outline"}
-                          className={selectedGuarantors.includes(guarantor.id) ? "bg-gradient-accent" : ""}
-                          onClick={() => {
-                            if (selectedGuarantors.includes(guarantor.id)) {
-                              setSelectedGuarantors(prev => prev.filter(id => id !== guarantor.id))
-                            } else {
-                              setSelectedGuarantors(prev => [...prev, guarantor.id])
-                            }
-                          }}
-                        >
-                          {selectedGuarantors.includes(guarantor.id) ? "Selected" : "Select"}
-                        </Button>
-                      </div>
+                {searchQuery && searchResults.length === 0 ? (
+                  <Card className="border border-border">
+                    <CardContent className="p-8 text-center">
+                      <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">No guarantors found matching "{searchQuery}"</p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Try searching with a different name or member code
+                      </p>
                     </CardContent>
                   </Card>
-                ))}
+                ) : searchQuery ? (
+                  searchResults.map((guarantor) => (
+                    <Card key={guarantor.id} className="border border-border">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-2">
+                              <div>
+                                <p className="font-medium">{guarantor.name}</p>
+                                <p className="text-sm text-muted-foreground">{guarantor.code}</p>
+                              </div>
+                              <Badge variant={guarantor.reputation === 'Excellent' ? 'default' : 'secondary'}>
+                                {guarantor.reputation}
+                              </Badge>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <span className="text-muted-foreground">Savings:</span>
+                                <span className="ml-2 text-accent">KSh {guarantor.savings.toLocaleString()}</span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Can Guarantee:</span>
+                                <span className="ml-2">KSh {guarantor.guaranteeCapacity.toLocaleString()}</span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <Button
+                            variant={selectedGuarantors.includes(guarantor.id) ? "default" : "outline"}
+                            className={selectedGuarantors.includes(guarantor.id) ? "bg-gradient-accent" : ""}
+                            onClick={() => {
+                              if (selectedGuarantors.includes(guarantor.id)) {
+                                setSelectedGuarantors(prev => prev.filter(id => id !== guarantor.id))
+                              } else {
+                                setSelectedGuarantors(prev => [...prev, guarantor.id])
+                              }
+                            }}
+                          >
+                            {selectedGuarantors.includes(guarantor.id) ? "Selected" : "Select"}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <Card className="border border-border">
+                    <CardContent className="p-8 text-center">
+                      <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">Start typing to search for guarantors</p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Enter a member name or code to find potential guarantors
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
 
               <div className="p-4 bg-secondary/50 rounded-lg">
