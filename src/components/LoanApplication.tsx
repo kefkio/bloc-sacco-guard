@@ -19,6 +19,9 @@ import {
   Clock,
   Search
 } from "lucide-react"
+import { useLoanManager } from "@/hooks/useLoanManager"
+import { useAccount } from "wagmi"
+import { toast } from "sonner"
 
 const LoanApplication = () => {
   const [currentStep, setCurrentStep] = useState(1)
@@ -26,6 +29,8 @@ const LoanApplication = () => {
   const [selectedGuarantors, setSelectedGuarantors] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<typeof availableGuarantors>([])
+  const { isConnected } = useAccount()
+  const { apply } = useLoanManager()
 
   const steps = [
     { id: 1, title: "Loan Details", icon: FileText },
@@ -457,7 +462,18 @@ const LoanApplication = () => {
                 Next Step
               </Button>
             ) : (
-              <Button className="bg-gradient-accent shadow-accent-glow">
+              <Button
+                className="bg-gradient-accent shadow-accent-glow"
+                disabled={!isConnected || !loanAmount}
+                onClick={async () => {
+                  try {
+                    await apply(((parseInt(loanAmount||"0")/180000).toFixed(4)))
+                    toast.success('Loan application submitted. Admin will review and approve.')
+                  } catch (e: any) {
+                    toast.error(e?.message ?? 'Apply failed')
+                  }
+                }}
+              >
                 Submit Application
               </Button>
             )}

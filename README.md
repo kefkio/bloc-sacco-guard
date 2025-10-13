@@ -1,73 +1,138 @@
-# Welcome to your Lovable project
+## Bloc Sacco Guard
 
-## Project info
+A React + TypeScript + Vite web app styled with Tailwind CSS and shadcn-ui components. It includes pages for dashboarding, loan applications, guarantors, and savings, with routing via React Router.
 
-**URL**: https://lovable.dev/projects/d0cf49b8-47e9-4166-acbb-252e47a6ddac
+---
 
-## How can I edit this code?
+### Prerequisites
+- Node.js 18+ (recommended LTS)
+- npm 9+ (or pnpm/yarn/bun if you prefer)
 
-There are several ways of editing your application.
+Check versions:
+```bash
+node -v
+npm -v
+```
 
-**Use Lovable**
+### Getting Started
+Install dependencies:
+```bash
+npm install
+```
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/d0cf49b8-47e9-4166-acbb-252e47a6ddac) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+Start the development server:
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+By default, the app runs at `http://localhost:8080`.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Development Steps
+1. Create a feature branch
+   ```bash
+   git checkout -b feature/<short-description>
+   ```
+2. Run the dev server and iterate
+   ```bash
+   npm run dev
+   ```
+3. Build UI/features
+   - Add components under `src/components/` (use shadcn-ui primitives in `src/components/ui`).
+   - Add pages under `src/pages/` and register routes in `App.tsx` (React Router).
+   - Use the alias imports: `import { X } from '@/components/...';`
+   - Style with Tailwind utility classes.
+4. Forms & validation (optional)
+   - Use `react-hook-form` + `zod` (`@hookform/resolvers/zod`) for typed validation.
+5. Data fetching (optional)
+   - `@tanstack/react-query` is available for server-state and caching.
+6. Lint before committing
+   ```bash
+   npm run lint
+   ```
+7. Build to verify production output
+   ```bash
+   npm run build
+   ```
+8. Commit and push
+   ```bash
+   git add .
+   git commit -m "feat: <summary>"
+   git push -u origin feature/<short-description>
+   ```
 
-**Use GitHub Codespaces**
+### Build & Preview
+- Build production assets:
+```bash
+npm run build
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+- Preview the production build locally:
+```bash
+npm run preview
+```
 
-## What technologies are used for this project?
+### Available Scripts
+- `npm run dev`: Start Vite dev server
+- `npm run build`: Build for production
+- `npm run build:dev`: Build using development mode
+- `npm run preview`: Preview production build
+- `npm run lint`: Lint the project
 
-This project is built with:
+### Tech Stack
+- React 18
+- TypeScript 5
+- Vite 5 (React SWC plugin)
+- Tailwind CSS (+ `@tailwindcss/typography`)
+- shadcn-ui (Radix UI primitives)
+- React Router v6
+- wagmi + viem for wallet and on-chain calls
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Project Structure
+```
+bloc-sacco-guard/
+  public/                # Static assets
+  src/
+    assets/              # Images and media
+    components/          # Reusable UI and feature components
+      ui/                # shadcn-ui components
+    hooks/               # Reusable React hooks
+    lib/                 # Utilities/helpers
+    pages/               # Route-level pages
+    main.tsx             # App entry
+    App.tsx              # Router and layout wiring
+```
 
-## How can I deploy this project?
+Key routes (see `src/pages`):
+- `/` → `Index`
+- `/dashboard` → `DashboardPage`
+- `/loan-application` → `LoanApplicationPage`
+- `/guarantor` → `GuarantorPage`
+- `/savings` → `SavingsPage`
+- Fallback → `NotFound`
 
-Simply open [Lovable](https://lovable.dev/projects/d0cf49b8-47e9-4166-acbb-252e47a6ddac) and click on Share -> Publish.
+### Configuration
+- `vite.config.ts`: Dev server listens on `::` (all interfaces) at port `8080`; alias `@` → `./src`.
+- `tsconfig.json`: Base config with path mapping `@/*` → `src/*`.
+- `tailwind.config.ts`: Tailwind setup and shadcn-ui presets.
+- `src/lib/web3.ts`: wagmi config (default Base Sepolia). Change chains/transports as needed.
+  - Set env var `VITE_MEMBER_REGISTRY_ADDRESS` to your deployed `MemberRegistry` address for the Register button on Dashboard.
+  - Set env var `VITE_SAVINGS_POOL_ADDRESS` to your deployed `SavingsPool` address for on-chain deposits/withdrawals on Savings.
 
-## Can I connect a custom domain to my Lovable project?
+### Troubleshooting
+- Port busy: run with a different port
+  ```bash
+  npm run dev -- --port 3000
+  ```
 
-Yes, you can!
+- Windows/PowerShell execution policy: If scripts fail to run, start your shell as Administrator and try again, or use Git Bash.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+- OneDrive paths: If you see file-watch issues, consider moving the project outside OneDrive-synced folders or increase watch limits.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+- Node version: Ensure Node 18+; clear installs and re-install if you see ESM or vite-related errors
+  ```bash
+  rm -rf node_modules package-lock.json
+  npm install
+  ```
+
+### License
+This project currently has no explicit license. Add one if you plan to distribute.

@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
+import WalletConnectButton from "@/components/WalletConnectButton"
 import { Menu, X, Shield, Coins, Users, TrendingUp } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -42,14 +43,9 @@ const Navigation = () => {
             ))}
           </nav>
 
-          {/* Desktop Auth Buttons */}
+          {/* Desktop Wallet */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="ghost" size="sm">
-              Sign In
-            </Button>
-            <Button variant="default" size="sm" className="bg-gradient-primary shadow-glow">
-              Join SACCO
-            </Button>
+            <WalletConnectButton />
           </div>
 
           {/* Mobile Menu Button */}
@@ -79,12 +75,7 @@ const Navigation = () => {
                 </Link>
               ))}
               <div className="flex flex-col space-y-2 pt-4 border-t border-border">
-                <Button variant="ghost" size="sm" className="justify-start">
-                  Sign In
-                </Button>
-                <Button variant="default" size="sm" className="justify-start bg-gradient-primary">
-                  Join SACCO
-                </Button>
+                <WalletConnectButton />
               </div>
             </nav>
           </div>

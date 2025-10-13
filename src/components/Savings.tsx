@@ -8,11 +8,15 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { PiggyBank, TrendingUp, Calendar, ArrowUpCircle, ArrowDownCircle, Target, Wallet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useSavingsPool } from "@/hooks/useSavingsPool";
+import { useAccount } from "wagmi";
 
 const Savings = () => {
   const { toast } = useToast();
   const [depositAmount, setDepositAmount] = useState("");
   const [savingsGoal, setSavingsGoal] = useState(500000);
+  const { isConnected } = useAccount();
+  const { balance, depositEth, withdraw, writeStatus, isConfirming } = useSavingsPool();
 
   // Mock data
   const currentBalance = 245000;
@@ -59,7 +63,7 @@ const Savings = () => {
     }
   ];
 
-  const handleDeposit = () => {
+  const handleDeposit = async () => {
     if (!depositAmount || parseFloat(depositAmount) <= 0) {
       toast({
         title: "Invalid Amount",
@@ -68,13 +72,28 @@ const Savings = () => {
       });
       return;
     }
-
-    toast({
-      title: "Deposit Successful",
-      description: `KES ${parseFloat(depositAmount).toLocaleString()} has been added to your savings.`,
-    });
-    setDepositAmount("");
+    try {
+      await depositEth(depositAmount);
+      toast({ title: "Deposit submitted", description: "Confirm in wallet, wait for confirmation." });
+      setDepositAmount("");
+    } catch (e: any) {
+      toast({ title: "Deposit failed", description: e?.message ?? "Error", variant: "destructive" });
+    }
   };
+
+  const handleWithdraw = async () => {
+    if (!depositAmount || parseFloat(depositAmount) <= 0) {
+      toast({ title: "Invalid Amount", description: "Enter withdraw amount.", variant: "destructive" });
+      return;
+    }
+    try {
+      await withdraw(depositAmount);
+      toast({ title: "Withdraw submitted", description: "Confirm in wallet, wait for confirmation." });
+      setDepositAmount("");
+    } catch (e: any) {
+      toast({ title: "Withdraw failed", description: e?.message ?? "Error", variant: "destructive" });
+    }
+  }
 
   const handleSetGoal = () => {
     toast({
@@ -140,11 +159,57 @@ const Savings = () => {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="deposit">Make Deposit</TabsTrigger>
+          <TabsTrigger value="onchain">On-chain</TabsTrigger>
           <TabsTrigger value="history">Transaction History</TabsTrigger>
         </TabsList>
+        <TabsContent value="onchain" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Wallet className="h-5 w-5" />
+                On-chain Savings
+              </CardTitle>
+              <CardDescription>
+                Deposit/Withdraw native ETH to SavingsPool
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="text-sm">
+                {isConnected ? (
+                  <>
+                    <div className="font-medium">Your Pool Balance:</div>
+                    <div className="font-mono">{balance ? balance.toString() : '0'} wei</div>
+                  </>
+                ) : (
+                  <div>Please connect your wallet.</div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="amount2">Amount (ETH)</Label>
+                <Input
+                  id="amount2"
+                  type="number"
+                  value={depositAmount}
+                  onChange={(e) => setDepositAmount(e.target.value)}
+                  placeholder="0.01"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <Button onClick={handleDeposit} disabled={!isConnected || writeStatus === 'pending' || isConfirming}>
+                  <ArrowUpCircle className="h-4 w-4 mr-2" /> Deposit
+                </Button>
+                <Button variant="outline" onClick={handleWithdraw} disabled={!isConnected || writeStatus === 'pending' || isConfirming}>
+                  <ArrowDownCircle className="h-4 w-4 mr-2" /> Withdraw
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

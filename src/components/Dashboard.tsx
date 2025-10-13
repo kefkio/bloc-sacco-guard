@@ -14,6 +14,9 @@ import {
   AlertCircle,
   DollarSign
 } from "lucide-react"
+import { useAccount } from "wagmi"
+import { useMemberRegistry } from "@/hooks/useMemberRegistry"
+import { toast } from "sonner"
 
 const Dashboard = () => {
   const stats = [
@@ -99,6 +102,9 @@ const Dashboard = () => {
     }
   ]
 
+  const { isConnected } = useAccount()
+  const { isMember, register, writeStatus, isConfirming, isConfirmed } = useMemberRegistry()
+
   return (
     <div className="space-y-8">
       {/* Welcome Section */}
@@ -107,10 +113,36 @@ const Dashboard = () => {
           <h1 className="text-3xl font-bold">Welcome back, Sarah</h1>
           <p className="text-muted-foreground">Here's your SACCO activity overview</p>
         </div>
-        <Button className="bg-gradient-primary shadow-glow">
-          Apply for Loan
-        </Button>
+        <div className="flex items-center gap-2">
+          {isConnected && !isMember ? (
+            <Button
+              className="bg-gradient-primary shadow-glow"
+              onClick={async () => {
+                try {
+                  await register()
+                  toast.success('Registration submitted. Confirm in your wallet and wait for 1-2 blocks.')
+                } catch (e: any) {
+                  toast.error(e?.message ?? 'Registration failed')
+                }
+              }}
+              disabled={writeStatus === 'pending' || isConfirming}
+            >
+              {writeStatus === 'pending' || isConfirming ? 'Registering...' : 'Register as Member'}
+            </Button>
+          ) : null}
+          <Button variant="outline">
+            Apply for Loan
+          </Button>
+        </div>
       </div>
+
+      {isConnected ? (
+        <div>
+          <Badge variant={isMember ? 'default' : 'secondary'}>
+            {isMember ? 'Member: Active' : 'Member: Not Registered'}
+          </Badge>
+        </div>
+      ) : null}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
