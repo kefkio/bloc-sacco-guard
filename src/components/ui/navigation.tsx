@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import WalletConnectButton from "@/components/WalletConnectButton"
+import ApiStatus from "@/components/ApiStatus"
 import { Menu, X, Shield, Coins, Users, TrendingUp } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -45,6 +46,7 @@ const Navigation = () => {
 
           {/* Desktop Wallet */}
           <div className="hidden md:flex items-center space-x-4">
+            <ApiStatus />
             <WalletConnectButton />
           </div>
 
@@ -75,6 +77,7 @@ const Navigation = () => {
                 </Link>
               ))}
               <div className="flex flex-col space-y-2 pt-4 border-t border-border">
+                <ApiStatus />
                 <WalletConnectButton />
               </div>
             </nav>

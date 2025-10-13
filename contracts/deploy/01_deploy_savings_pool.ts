@@ -1,4 +1,5 @@
 import { ethers } from "hardhat";
+import { writeAddress } from "./utils/writeAddresses";
 
 async function main() {
   const [deployer] = await ethers.getSigners();
@@ -8,7 +9,9 @@ async function main() {
   const pool = await SavingsPool.deploy(deployer.address);
   await pool.waitForDeployment();
 
-  console.log("SavingsPool deployed at:", await pool.getAddress());
+  const addr = await pool.getAddress();
+  console.log("SavingsPool deployed at:", addr);
+  writeAddress("SavingsPool", addr);
 }
 
 main().catch((error) => {

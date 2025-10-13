@@ -1,4 +1,5 @@
 import { ethers } from "hardhat";
+import { writeAddress } from "./utils/writeAddresses";
 
 async function main() {
   const [deployer] = await ethers.getSigners();
@@ -8,7 +9,9 @@ async function main() {
   const mgr = await LoanManager.deploy(deployer.address);
   await mgr.waitForDeployment();
 
-  console.log("LoanManager deployed at:", await mgr.getAddress());
+  const addr = await mgr.getAddress();
+  console.log("LoanManager deployed at:", addr);
+  writeAddress("LoanManager", addr);
 }
 
 main().catch((error) => {
