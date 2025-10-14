@@ -1,19 +1,19 @@
-import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'fs'
-import { resolve } from 'path'
+import fs from "fs";
+import path from "path";
 
-type Addresses = Record<string, Record<string, string>>
+const DEPLOY_FILE = path.join(__dirname, "../deployments.json");
 
-export function writeAddress(name: string, address: string, network: string = process.env.HARDHAT_NETWORK || 'local') {
-  const dir = resolve(__dirname, '..', 'deployments')
-  const file = resolve(dir, 'addresses.json')
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
-  let data: Addresses = {}
-  if (existsSync(file)) {
-    data = JSON.parse(readFileSync(file, 'utf8'))
+export function writeAddress(contractName: string, address: string) {
+  let deployments: Record<string, string> = {};
+
+  // Read existing deployments
+  if (fs.existsSync(DEPLOY_FILE)) {
+    const data = fs.readFileSync(DEPLOY_FILE, "utf-8");
+    deployments = JSON.parse(data);
   }
-  if (!data[network]) data[network] = {}
-  data[network][name] = address
-  writeFileSync(file, JSON.stringify(data, null, 2))
+
+  deployments[contractName] = address;
+  fs.writeFileSync(DEPLOY_FILE, JSON.stringify(deployments, null, 2));
+
+  console.log(`📝 Saved ${contractName} address: ${address}`);
 }
-
-
