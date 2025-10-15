@@ -127,3 +127,15 @@ License
 This project currently has no explicit license. Add one if you plan to distribute.
 
 
+## AI / Copilot instructions
+
+I've added `.github/copilot-instructions.md` with concise, project-specific guidance for AI coding agents and contributors. It contains the key files to inspect (`src/hooks/*`, `src/abis/*`, `src/lib/contracts.ts`, `src/lib/web3.ts`, `vite.config.ts`), required env vars, and recommended dev workflows.
+
+Quick backend run notes:
+- Install and run the Express API from the `server/` folder:
+  - `cd server` then `npm install` and `npm run dev` (dev uses `tsx watch src/index.ts`, server default port 4000).
+- The frontend dev server proxies `/api` to `http://localhost:4000` (see `vite.config.ts`).
+
+If you want this README to include more detailed setup steps (example `.env`, CI, or contract deploy examples), tell me which area to expand and I will update it.
+
+

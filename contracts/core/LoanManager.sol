@@ -2,28 +2,37 @@
 pragma solidity ^0.8.24;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {ILoanManager} from "../interfaces/ILoanManager.sol";
 
-contract LoanManager is Ownable {
-    struct Loan {
-        address borrower;
-        uint256 amount; // in wei
-        bool approved;
-        bool disbursed;
-        uint256 repaid; // total repaid wei
-    }
+/**
+ * @title LoanManager
+ * @dev Implementation of ILoanManager interface to manage loans
+ * - Allows users to request loans
+ * - Allows owner to approve and disburse loans
+ * - Allows borrowers to repay loans
+ * - Allows owner to create loans directly for specific borrowers
+ */
+contract LoanManager is ILoanManager, Ownable {
+    /// @notice Tracks the next loan ID
+    uint256 public override nextId;
 
-    uint256 public nextId;
-    mapping(uint256 => Loan) public loans;
+    /// @notice Maps loan ID to Loan struct
+    mapping(uint256 => Loan) public override loans;
 
-    event Applied(uint256 indexed id, address indexed borrower, uint256 amount);
-    event Approved(uint256 indexed id);
-    event Disbursed(uint256 indexed id, address indexed to, uint256 amount);
-    event Repaid(uint256 indexed id, address indexed from, uint256 amount);
-
+    /**
+     * @dev Constructor sets initial owner
+     * @param initialOwner The address of the owner (admin) of the contract
+     */
     constructor(address initialOwner) Ownable(initialOwner) {}
 
-    function apply(uint256 amount) external returns (uint256 id) {
+    /**
+     * @notice Request a new loan
+     * @param amount The amount to borrow (in wei)
+     * @return id The newly created loan ID
+     */
+    function requestLoan(uint256 amount) external override returns (uint256 id) {
         require(amount > 0, "amount=0");
+
         id = nextId++;
         loans[id] = Loan({
             borrower: msg.sender,
@@ -32,34 +41,74 @@ contract LoanManager is Ownable {
             disbursed: false,
             repaid: 0
         });
+
         emit Applied(id, msg.sender, amount);
     }
 
-    function approve(uint256 id) external onlyOwner {
+    /**
+     * @notice Approve a loan (owner only)
+     * @param id The ID of the loan to approve
+     */
+    function approve(uint256 id) external override onlyOwner {
         Loan storage ln = loans[id];
         require(ln.borrower != address(0), "not found");
-        require(!ln.approved, "approved");
+        require(!ln.approved, "already approved");
+
         ln.approved = true;
         emit Approved(id);
     }
 
-    function disburse(uint256 id) external onlyOwner {
+    /**
+     * @notice Disburse an approved loan (owner only)
+     * @param id The ID of the loan to disburse
+     */
+    function disburse(uint256 id) external override onlyOwner {
         Loan storage ln = loans[id];
         require(ln.approved, "not approved");
-        require(!ln.disbursed, "disbursed");
+        require(!ln.disbursed, "already disbursed");
+
         ln.disbursed = true;
+
         (bool ok, ) = ln.borrower.call{value: ln.amount}("");
         require(ok, "disburse failed");
+
         emit Disbursed(id, ln.borrower, ln.amount);
     }
 
-    function repay(uint256 id) external payable {
+    /**
+     * @notice Repay a loan
+     * @param id The ID of the loan to repay
+     */
+    function repay(uint256 id) external override payable {
         Loan storage ln = loans[id];
         require(ln.disbursed, "not disbursed");
         require(msg.value > 0, "no value");
+
         ln.repaid += msg.value;
+
         emit Repaid(id, msg.sender, msg.value);
     }
+
+    /**
+     * @notice Allows the owner to create a loan directly for a borrower (auto-approved)
+     * @param borrower The address of the borrower
+     * @param amount The loan amount
+     * @return id The newly created loan ID
+     */
+    function createLoan(address borrower, uint256 amount) external onlyOwner returns (uint256 id) {
+        require(borrower != address(0), "invalid borrower");
+        require(amount > 0, "amount=0");
+
+        id = nextId++;
+        loans[id] = Loan({
+            borrower: borrower,
+            amount: amount,
+            approved: true,   // auto-approved since admin created it
+            disbursed: false,
+            repaid: 0
+        });
+
+        emit Applied(id, borrower, amount);
+        emit Approved(id); // emit approval since it's auto-approved
+    }
 }
-
-

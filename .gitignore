@@ -22,3 +22,16 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment files (keep your keys safe!)
+.env
+
+# Hardhat build outputs
+artifacts/
+cache/
+
+# Deployment outputs
+deployments/
+
+# Optional: logs or temp data from Hardhat
+hardhat.log
