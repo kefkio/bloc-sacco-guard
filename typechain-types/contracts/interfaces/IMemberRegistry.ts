@@ -24,42 +24,92 @@ import type {
 
 export interface IMemberRegistryInterface extends Interface {
   getFunction(
-    nameOrSignature: "isMember" | "kycPassed" | "register" | "unregister"
+    nameOrSignature:
+      | "hasRequestedExit"
+      | "isKycPassed"
+      | "isRegistered"
+      | "registerMember"
+      | "unregisterMember"
+      | "updateKycStatus"
   ): FunctionFragment;
 
   getEvent(
     nameOrSignatureOrTopic:
+      | "ExitRequested"
       | "MemberKycUpdated"
       | "MemberRegistered"
       | "MemberUnregistered"
   ): EventFragment;
 
   encodeFunctionData(
-    functionFragment: "isMember",
+    functionFragment: "hasRequestedExit",
     values: [AddressLike]
   ): string;
   encodeFunctionData(
-    functionFragment: "kycPassed",
+    functionFragment: "isKycPassed",
     values: [AddressLike]
   ): string;
-  encodeFunctionData(functionFragment: "register", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "unregister",
+    functionFragment: "isRegistered",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "registerMember",
     values?: undefined
   ): string;
+  encodeFunctionData(
+    functionFragment: "unregisterMember",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "updateKycStatus",
+    values: [AddressLike, boolean]
+  ): string;
 
-  decodeFunctionResult(functionFragment: "isMember", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "kycPassed", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "register", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "unregister", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "hasRequestedExit",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "isKycPassed",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "isRegistered",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "registerMember",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "unregisterMember",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "updateKycStatus",
+    data: BytesLike
+  ): Result;
+}
+
+export namespace ExitRequestedEvent {
+  export type InputTuple = [member: AddressLike];
+  export type OutputTuple = [member: string];
+  export interface OutputObject {
+    member: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
 }
 
 export namespace MemberKycUpdatedEvent {
-  export type InputTuple = [account: AddressLike, kycPassed: boolean];
-  export type OutputTuple = [account: string, kycPassed: boolean];
+  export type InputTuple = [member: AddressLike, passed: boolean];
+  export type OutputTuple = [member: string, passed: boolean];
   export interface OutputObject {
-    account: string;
-    kycPassed: boolean;
+    member: string;
+    passed: boolean;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -68,10 +118,10 @@ export namespace MemberKycUpdatedEvent {
 }
 
 export namespace MemberRegisteredEvent {
-  export type InputTuple = [account: AddressLike];
-  export type OutputTuple = [account: string];
+  export type InputTuple = [member: AddressLike];
+  export type OutputTuple = [member: string];
   export interface OutputObject {
-    account: string;
+    member: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -80,10 +130,10 @@ export namespace MemberRegisteredEvent {
 }
 
 export namespace MemberUnregisteredEvent {
-  export type InputTuple = [account: AddressLike];
-  export type OutputTuple = [account: string];
+  export type InputTuple = [member: AddressLike];
+  export type OutputTuple = [member: string];
   export interface OutputObject {
-    account: string;
+    member: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -134,31 +184,60 @@ export interface IMemberRegistry extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
-  isMember: TypedContractMethod<[account: AddressLike], [boolean], "view">;
+  hasRequestedExit: TypedContractMethod<
+    [account: AddressLike],
+    [boolean],
+    "view"
+  >;
 
-  kycPassed: TypedContractMethod<[account: AddressLike], [boolean], "view">;
+  isKycPassed: TypedContractMethod<[account: AddressLike], [boolean], "view">;
 
-  register: TypedContractMethod<[], [void], "nonpayable">;
+  isRegistered: TypedContractMethod<[account: AddressLike], [boolean], "view">;
 
-  unregister: TypedContractMethod<[], [void], "nonpayable">;
+  registerMember: TypedContractMethod<[], [void], "nonpayable">;
+
+  unregisterMember: TypedContractMethod<[], [void], "nonpayable">;
+
+  updateKycStatus: TypedContractMethod<
+    [account: AddressLike, passed: boolean],
+    [void],
+    "nonpayable"
+  >;
 
   getFunction<T extends ContractMethod = ContractMethod>(
     key: string | FunctionFragment
   ): T;
 
   getFunction(
-    nameOrSignature: "isMember"
+    nameOrSignature: "hasRequestedExit"
   ): TypedContractMethod<[account: AddressLike], [boolean], "view">;
   getFunction(
-    nameOrSignature: "kycPassed"
+    nameOrSignature: "isKycPassed"
   ): TypedContractMethod<[account: AddressLike], [boolean], "view">;
   getFunction(
-    nameOrSignature: "register"
+    nameOrSignature: "isRegistered"
+  ): TypedContractMethod<[account: AddressLike], [boolean], "view">;
+  getFunction(
+    nameOrSignature: "registerMember"
   ): TypedContractMethod<[], [void], "nonpayable">;
   getFunction(
-    nameOrSignature: "unregister"
+    nameOrSignature: "unregisterMember"
   ): TypedContractMethod<[], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "updateKycStatus"
+  ): TypedContractMethod<
+    [account: AddressLike, passed: boolean],
+    [void],
+    "nonpayable"
+  >;
 
+  getEvent(
+    key: "ExitRequested"
+  ): TypedContractEvent<
+    ExitRequestedEvent.InputTuple,
+    ExitRequestedEvent.OutputTuple,
+    ExitRequestedEvent.OutputObject
+  >;
   getEvent(
     key: "MemberKycUpdated"
   ): TypedContractEvent<
@@ -182,6 +261,17 @@ export interface IMemberRegistry extends BaseContract {
   >;
 
   filters: {
+    "ExitRequested(address)": TypedContractEvent<
+      ExitRequestedEvent.InputTuple,
+      ExitRequestedEvent.OutputTuple,
+      ExitRequestedEvent.OutputObject
+    >;
+    ExitRequested: TypedContractEvent<
+      ExitRequestedEvent.InputTuple,
+      ExitRequestedEvent.OutputTuple,
+      ExitRequestedEvent.OutputObject
+    >;
+
     "MemberKycUpdated(address,bool)": TypedContractEvent<
       MemberKycUpdatedEvent.InputTuple,
       MemberKycUpdatedEvent.OutputTuple,

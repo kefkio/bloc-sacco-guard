@@ -42,10 +42,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ISavingsPool__factory>;
     getContractFactory(
-      name: "MemberRegistry",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.MemberRegistry__factory>;
-    getContractFactory(
       name: "SavingsPool",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.SavingsPool__factory>;
@@ -86,11 +82,6 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.ISavingsPool>;
     getContractAt(
-      name: "MemberRegistry",
-      address: string | ethers.Addressable,
-      signer?: ethers.Signer
-    ): Promise<Contracts.MemberRegistry>;
-    getContractAt(
       name: "SavingsPool",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
@@ -124,10 +115,6 @@ declare module "hardhat/types/runtime" {
       name: "ISavingsPool",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.ISavingsPool>;
-    deployContract(
-      name: "MemberRegistry",
-      signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.MemberRegistry>;
     deployContract(
       name: "SavingsPool",
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -168,11 +155,6 @@ declare module "hardhat/types/runtime" {
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.ISavingsPool>;
-    deployContract(
-      name: "MemberRegistry",
-      args: any[],
-      signerOrOptions?: ethers.Signer | DeployContractOptions
-    ): Promise<Contracts.MemberRegistry>;
     deployContract(
       name: "SavingsPool",
       args: any[],

@@ -5,5 +5,4 @@ import type * as core from "./core";
 export type { core };
 import type * as interfaces from "./interfaces";
 export type { interfaces };
-export type { MemberRegistry } from "./MemberRegistry";
 export type { SavingsPool } from "./SavingsPool";

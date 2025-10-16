@@ -3,5 +3,4 @@
 /* eslint-disable */
 export * as core from "./core";
 export * as interfaces from "./interfaces";
-export { MemberRegistry__factory } from "./MemberRegistry__factory";
 export { SavingsPool__factory } from "./SavingsPool__factory";

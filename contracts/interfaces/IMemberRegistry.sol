@@ -1,16 +1,24 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+/**
+ * @title IMemberRegistry
+ * @dev Interface for SACCO member registration, exit requests, and KYC verification.
+ */
 interface IMemberRegistry {
-    event MemberRegistered(address indexed account);
-    event MemberUnregistered(address indexed account);
-    event MemberKycUpdated(address indexed account, bool kycPassed);
+    // 📣 Events
+    event MemberRegistered(address indexed member);
+    event MemberUnregistered(address indexed member);
+    event MemberKycUpdated(address indexed member, bool passed);
+    event ExitRequested(address indexed member);
 
-    function isMember(address account) external view returns (bool);
-    function kycPassed(address account) external view returns (bool);
+    // 🧾 Core member actions
+    function registerMember() external;
+    function unregisterMember() external;
+    function updateKycStatus(address account, bool passed) external;
 
-    function register() external;
-    function unregister() external;
+    // 🔍 View functions
+    function isRegistered(address account) external view returns (bool);
+    function isKycPassed(address account) external view returns (bool);
+    function hasRequestedExit(address account) external view returns (bool);
 }
-
-

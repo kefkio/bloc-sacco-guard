@@ -15,13 +15,26 @@ const _abi = [
       {
         indexed: true,
         internalType: "address",
-        name: "account",
+        name: "member",
+        type: "address",
+      },
+    ],
+    name: "ExitRequested",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "address",
+        name: "member",
         type: "address",
       },
       {
         indexed: false,
         internalType: "bool",
-        name: "kycPassed",
+        name: "passed",
         type: "bool",
       },
     ],
@@ -34,7 +47,7 @@ const _abi = [
       {
         indexed: true,
         internalType: "address",
-        name: "account",
+        name: "member",
         type: "address",
       },
     ],
@@ -47,7 +60,7 @@ const _abi = [
       {
         indexed: true,
         internalType: "address",
-        name: "account",
+        name: "member",
         type: "address",
       },
     ],
@@ -62,7 +75,7 @@ const _abi = [
         type: "address",
       },
     ],
-    name: "isMember",
+    name: "hasRequestedExit",
     outputs: [
       {
         internalType: "bool",
@@ -81,7 +94,26 @@ const _abi = [
         type: "address",
       },
     ],
-    name: "kycPassed",
+    name: "isKycPassed",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "",
+        type: "bool",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "account",
+        type: "address",
+      },
+    ],
+    name: "isRegistered",
     outputs: [
       {
         internalType: "bool",
@@ -94,14 +126,32 @@ const _abi = [
   },
   {
     inputs: [],
-    name: "register",
+    name: "registerMember",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
   },
   {
     inputs: [],
-    name: "unregister",
+    name: "unregisterMember",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "account",
+        type: "address",
+      },
+      {
+        internalType: "bool",
+        name: "passed",
+        type: "bool",
+      },
+    ],
+    name: "updateKycStatus",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
