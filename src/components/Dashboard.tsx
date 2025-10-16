@@ -17,6 +17,8 @@ import {
 import { useAccount } from "wagmi"
 import { useMemberRegistry } from "@/hooks/useMemberRegistry"
 import { toast } from "sonner"
+import { getHealth, getNextId } from "@/lib/api"
+import { useEffect, useState } from "react"
 
 const Dashboard = () => {
   const stats = [
@@ -105,6 +107,34 @@ const Dashboard = () => {
   const { isConnected } = useAccount()
   const { isMember, register, writeStatus, isConfirming, isConfirmed } = useMemberRegistry()
 
+  const [apiHealth, setApiHealth] = useState<string | null>(null)
+  const [nextLoanId, setNextLoanId] = useState<number | null>(null)
+  const [loadingApi, setLoadingApi] = useState(false)
+
+  useEffect(() => {
+    let mounted = true
+    const load = async () => {
+      try {
+        setLoadingApi(true)
+        const h = await getHealth()
+        const id = await getNextId()
+        if (!mounted) return
+        setApiHealth(h.status ?? "unknown")
+        setNextLoanId(id.nextId ?? null)
+      } catch (e) {
+        if (!mounted) return
+        setApiHealth("offline")
+      } finally {
+        if (mounted) setLoadingApi(false)
+      }
+    }
+
+    load()
+    return () => {
+      mounted = false
+    }
+  }, [])
+
   return (
     <div className="space-y-8">
       {/* Welcome Section */}
@@ -112,6 +142,14 @@ const Dashboard = () => {
         <div>
           <h1 className="text-3xl font-bold">Welcome back, Sarah</h1>
           <p className="text-muted-foreground">Here's your SACCO activity overview</p>
+          <div className="mt-2 flex items-center gap-3">
+            <div className="text-sm text-muted-foreground">API:</div>
+            <div className="text-sm font-medium">
+              {loadingApi ? 'Checking...' : apiHealth ?? 'unknown'}
+            </div>
+            <div className="text-sm text-muted-foreground">Next Loan ID:</div>
+            <div className="text-sm font-medium">{nextLoanId ?? '-'}</div>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {isConnected && !isMember ? (
