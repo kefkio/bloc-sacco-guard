@@ -16,6 +16,10 @@ import {
 } from "lucide-react"
 import { useAccount } from "wagmi"
 import { useMemberRegistry } from "@/hooks/useMemberRegistry"
+import { useSavingsPool } from "@/hooks/useSavingsPool"
+import { useLoanManager } from "@/hooks/useLoanManager"
+import { useAccount } from "wagmi"
+import { ethers } from "ethers"
 import { toast } from "sonner"
 import { getHealth, getNextId } from "@/lib/api"
 import { useEffect, useState } from "react"
@@ -105,7 +109,12 @@ const Dashboard = () => {
   ]
 
   const { isConnected } = useAccount()
-  const { isMember, register, writeStatus, isConfirming, isConfirmed } = useMemberRegistry()
+  const { isMember, kycPassed, register, writeStatus, isConfirming, isConfirmed } = useMemberRegistry()
+  const { balance } = useSavingsPool()
+  const { address } = useAccount()
+  const [latestLoanId, setLatestLoanId] = useState<number | null>(null)
+  const loanIdForHook = latestLoanId !== null ? BigInt(latestLoanId) : undefined
+  const { loan } = useLoanManager(loanIdForHook)
 
   const [apiHealth, setApiHealth] = useState<string | null>(null)
   const [nextLoanId, setNextLoanId] = useState<number | null>(null)
@@ -135,6 +144,14 @@ const Dashboard = () => {
     }
   }, [])
 
+  // derive latest loan id from nextLoanId
+  useEffect(() => {
+    if (nextLoanId && typeof nextLoanId === 'number') {
+      const id = Number(nextLoanId) - 1
+      setLatestLoanId(id >= 0 ? id : null)
+    }
+  }, [nextLoanId])
+
   return (
     <div className="space-y-8">
       {/* Welcome Section */}
@@ -149,6 +166,26 @@ const Dashboard = () => {
             </div>
             <div className="text-sm text-muted-foreground">Next Loan ID:</div>
             <div className="text-sm font-medium">{nextLoanId ?? '-'}</div>
+          </div>
+          {/* On-chain status widgets */}
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="text-sm">
+              <div className="text-xs text-muted-foreground">Member</div>
+              <div className="font-medium">{isMember ? 'Registered' : 'Not registered'}</div>
+              <div className="text-xs text-muted-foreground">KYC: {kycPassed ? 'Passed' : 'Pending'}</div>
+            </div>
+
+            <div className="text-sm">
+              <div className="text-xs text-muted-foreground">Savings Balance</div>
+              <div className="font-medium">{balance ? `${ethers.formatEther(balance)} ETH` : '-'}</div>
+              <div className="text-xs text-muted-foreground">Address: {address ?? '-'}</div>
+            </div>
+
+            <div className="text-sm">
+              <div className="text-xs text-muted-foreground">Latest Loan</div>
+              <div className="font-medium">{loan ? `Borrower: ${loan.borrower}` : (latestLoanId !== null ? 'No loan' : '-')}</div>
+              <div className="text-xs text-muted-foreground">Loan ID: {latestLoanId ?? '-'}</div>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
