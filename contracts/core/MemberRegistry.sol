@@ -1,72 +1,141 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "../interfaces/IMemberRegistry.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
-/**
- * @title MemberRegistry
- * @dev Implements IMemberRegistry to manage SACCO member registration, exit requests, and KYC verification.
- */
-contract MemberRegistry is Ownable, IMemberRegistry {
+contract SACCOMembers {
+    using ECDSA for bytes32;
+
     struct Member {
         bool isRegistered;
-        bool isKycPassed;
-        bool exitRequested;
+        bool kycApproved;
+        uint256 exitRequestTime;
+        bytes32 exitCommitment; // For commit-reveal
     }
 
-    mapping(address => Member) private members;
+    address[] private members;
+    mapping(address => Member) private memberStatus;
+    mapping(bytes32 => bool) private usedCommitments; // Prevent replay
 
-    // No event redeclarations here; declared in interface
+    // Multisig: 2/3 signatures required for KYC updates
+    address[3] public kycAdmins;
+    mapping(address => bool) public isKycAdmin;
 
-    constructor(address initialOwner) Ownable(msg.sender) {
-        if (initialOwner != address(0) && initialOwner != msg.sender) {
-            transferOwnership(initialOwner);
+    // Timelock: 28 days (adjust as needed)
+    uint256 public constant EXIT_TIMELOCK = 28 days;
+
+    event MemberRegistered(address indexed member);
+    event MemberExited(address indexed member);
+    event KycStatusUpdated(address indexed member, bool approved);
+    event ExitRequested(address indexed member, uint256 requestTime);
+
+    constructor(address[3] memory _kycAdmins) {
+        for (uint256 i = 0; i < 3; i++) {
+            kycAdmins[i] = _kycAdmins[i];
+            isKycAdmin[_kycAdmins[i]] = true;
         }
     }
 
-    /// @notice Register the sender as a SACCO member
-    function registerMember() external override {
-        require(!members[msg.sender].isRegistered, "Already registered");
-        members[msg.sender] = Member(true, false, false);
+    // --- Commit-Reveal Registration (Anti-Front-Running) ---
+    function registerMember(bytes32 commitment) external {
+        require(!usedCommitments[commitment], "Commitment already used");
+        require(!memberStatus[msg.sender].isRegistered, "Already registered");
+
+        usedCommitments[commitment] = true;
+        memberStatus[msg.sender].exitCommitment = commitment;
+        members.push(msg.sender);
+
         emit MemberRegistered(msg.sender);
     }
 
-    /// @notice Request to exit SACCO membership
-    function requestExit() external {
-        require(members[msg.sender].isRegistered, "Not registered");
-        require(!members[msg.sender].exitRequested, "Already requested");
-        members[msg.sender].exitRequested = true;
-        emit ExitRequested(msg.sender);
+    // Reveal phase (call after registration)
+    function revealRegistration(bytes32 salt, string memory secret) external {
+        address member = msg.sender;
+        require(memberStatus[member].isRegistered, "Not registered");
+        bytes32 commitment = _hashCommitment(salt, secret, member);
+        require(memberStatus[member].exitCommitment == commitment, "Invalid reveal");
+
+        // Clear commitment after reveal
+        memberStatus[member].exitCommitment = bytes32(0);
     }
 
-    /// @notice Admin removes a member after exit request
-    function unregisterMember() external override {
-        require(members[msg.sender].isRegistered, "Not registered");
-        require(members[msg.sender].exitRequested, "Exit not requested");
-        delete members[msg.sender];
-        emit MemberUnregistered(msg.sender);
+    // --- Commit-Reveal Exit Request ---
+    function requestExit(bytes32 commitment) external {
+        require(memberStatus[msg.sender].isRegistered, "Not a member");
+        require(memberStatus[msg.sender].exitRequestTime == 0, "Exit already requested");
+        require(!usedCommitments[commitment], "Commitment used");
+
+        usedCommitments[commitment] = true;
+        memberStatus[msg.sender].exitCommitment = commitment;
+        memberStatus[msg.sender].exitRequestTime = block.timestamp;
+
+        emit ExitRequested(msg.sender, block.timestamp);
     }
 
-    /// @notice Admin updates KYC status
-    function updateKycStatus(address account, bool passed) external override onlyOwner {
-        require(members[account].isRegistered, "Not registered");
-        members[account].isKycPassed = passed;
-        emit MemberKycUpdated(account, passed);
+    function revealExit(bytes32 salt, string memory secret) external {
+        address member = msg.sender;
+        require(memberStatus[member].exitRequestTime > 0, "No exit requested");
+        bytes32 commitment = _hashCommitment(salt, secret, member);
+        require(memberStatus[member].exitCommitment == commitment, "Invalid reveal");
+        require(block.timestamp >= memberStatus[member].exitRequestTime + EXIT_TIMELOCK, "Timelock not expired");
+
+        memberStatus[member].isRegistered = false;
+        memberStatus[member].exitRequestTime = 0;
+        memberStatus[member].exitCommitment = bytes32(0);
+
+        emit MemberExited(member);
     }
 
-    /// @notice Check if an address is registered
-    function isRegistered(address account) external view override returns (bool) {
-        return members[account].isRegistered;
+    // --- Multisig KYC Updates ---
+    function updateKycStatus(
+        address member,
+        bool approved,
+        bytes[3] memory signatures,
+        uint256[3] memory deadlines
+    ) external {
+        require(_verifyMultisig(member, approved, signatures, deadlines), "Invalid signatures");
+        memberStatus[member].kycApproved = approved;
+        emit KycStatusUpdated(member, approved);
     }
 
-    /// @notice Check if an address has passed KYC
-    function isKycPassed(address account) external view override returns (bool) {
-        return members[account].isKycPassed;
+    // --- Helper Functions ---
+    function _hashCommitment(bytes32 salt, string memory secret, address member) private pure returns (bytes32) {
+        return keccak256(abi.encodePacked(salt, keccak256(bytes(secret)), member));
     }
 
-    /// @notice Check if an address has requested exit
-    function hasRequestedExit(address account) external view override returns (bool) {
-        return members[account].exitRequested;
+    function _verifyMultisig(
+        address member,
+        bool approved,
+        bytes[3] memory signatures,
+        uint256[3] memory deadlines
+    ) private view returns (bool) {
+        bytes32 message = _hashKycUpdate(member, approved);
+        uint256 validSignatures = 0;
+
+        for (uint256 i = 0; i < 3; i++) {
+            address admin = kycAdmins[i];
+            if (deadlines[i] < block.timestamp) revert("Signature expired");
+            if (ECDSA.recover(message, signatures[i]) != admin) continue;
+            validSignatures++;
+        }
+        return validSignatures >= 2; // 2/3 threshold
+    }
+
+    function _hashKycUpdate(address member, bool approved) private view returns (bytes32) {
+        return keccak256(abi.encodePacked(address(this), member, approved, block.chainid));
+    }
+
+    // --- View Functions ---
+    function isMember(address member) public view returns (bool) {
+        return memberStatus[member].isRegistered;
+    }
+
+    function getKycStatus(address member) public view returns (bool) {
+        return memberStatus[member].kycApproved;
+    }
+
+    function getExitRequestTime(address member) public view returns (uint256) {
+        return memberStatus[member].exitRequestTime;
     }
 }

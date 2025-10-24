@@ -3,20 +3,15 @@ pragma solidity ^0.8.24;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-/**
- * Simple ETH savings pool:
- * - Users deposit native ETH
- * - Balance tracked per address
- * - Users can withdraw their own balance
- */
 contract SavingsPool is Ownable {
     event Deposited(address indexed account, uint256 amount);
     event Withdrawn(address indexed account, uint256 amount);
 
-    mapping(address => uint256) public balanceOf;
+mapping(address => uint256) public balanceOf;
 
-    constructor(address initialOwner) Ownable(initialOwner) {}
-
+constructor(address initialOwner) {
+    transferOwnership(initialOwner); // Set the desired owner
+}
     function deposit() external payable {
         require(msg.value > 0, "No ETH sent");
         balanceOf[msg.sender] += msg.value;
@@ -31,5 +26,3 @@ contract SavingsPool is Ownable {
         emit Withdrawn(msg.sender, amount);
     }
 }
-
-
